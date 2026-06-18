@@ -1,0 +1,30 @@
+replicaCount: 1
+
+image:
+  repository: agent-checkpoint-demo
+  pullPolicy: Never    # image loaded via `kind load`, not pulled from registry
+  tag: "latest"
+
+env:
+  CHECKPOINT_DB: "sqlite:////data/checkpoints/demo_run.db"
+  RUN_ID: "demo-run-001"
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+persistence:
+  enabled: true
+  storageClassName: "standard"
+  size: "1Gi"
+  mountPath: "/data/checkpoints"
+
+terminationGracePeriodSeconds: 30
+
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1

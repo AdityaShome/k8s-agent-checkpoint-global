@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-checkpoint-demo
+  labels:
+    app: agent-checkpoint-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-checkpoint-demo
+  template:
+    metadata:
+      labels:
+        app: agent-checkpoint-demo
+    spec:
+      # Allow 30s for SQLite WAL to flush and the agent to reach a clean
+      # checkpoint boundary before the container is force-killed.
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: agent
+          image: agent-checkpoint-demo:latest
+          imagePullPolicy: Never   # image is loaded via `kind load`, not pulled
+
+          command: ["python", "examples/demo_agent.py"]
+
+          envFrom:
+            - configMapRef:
+                name: agent-checkpoint-config
+
+          volumeMounts:
+            - name: checkpoint-storage
+              mountPath: /data/checkpoints
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          lifecycle:
+            preStop:
+              exec:
+                # Give the agent 5s to finish writing the current checkpoint
+                # before Kubernetes sends SIGTERM.
+                command: ["sleep", "5"]
+
+      volumes:
+        - name: checkpoint-storage
+          persistentVolumeClaim:
+            claimName: checkpoint-storage
+
+      # restartPolicy Always (Deployment default) ensures Kubernetes
+      # automatically reschedules the pod after a force-delete.

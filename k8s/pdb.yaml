@@ -1,0 +1,22 @@
+# PodDisruptionBudget (PDB) controls voluntary disruptions — e.g., node
+# drains during upgrades or `kubectl drain`. It does NOT affect force-deletes
+# (`kubectl delete pod --force`), which are involuntary disruptions.
+#
+# Production: set minAvailable: 1 (or maxUnavailable: 0) so that a node
+# drain waits until the agent finishes its current checkpoint before evicting.
+# With agent-checkpoint, even minAvailable: 0 is safe because the agent
+# will resume from the last checkpoint after the pod is rescheduled.
+#
+# Demo: maxUnavailable: 1 allows voluntary disruption so `make demo-kill`
+# works without being blocked by the PDB.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: agent-checkpoint-pdb
+  labels:
+    app: agent-checkpoint-demo
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: agent-checkpoint-demo

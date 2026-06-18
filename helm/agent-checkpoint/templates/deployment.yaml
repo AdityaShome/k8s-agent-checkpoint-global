@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "agent-checkpoint.fullname" . }}
+  labels:
+    {{- include "agent-checkpoint.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "agent-checkpoint.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agent-checkpoint.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+
+      containers:
+        - name: agent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          command: ["python", "examples/demo_agent.py"]
+
+          env:
+            {{- range $k, $v := .Values.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: checkpoint-storage
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: checkpoint-storage
+          persistentVolumeClaim:
+            claimName: {{ include "agent-checkpoint.fullname" . }}-storage
+      {{- end }}

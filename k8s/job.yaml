@@ -1,0 +1,60 @@
+# Use Job for batch agents (finite task, run to completion).
+# Use Deployment for persistent agents (chat bots, monitoring loops).
+#
+# The key difference for checkpointing:
+#   Job:        Kubernetes retries the pod on failure up to backoffLimit times.
+#               The agent resumes from the last checkpoint on each retry.
+#   Deployment: Pod is always restarted on exit. Good for agents that
+#               loop indefinitely.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: agent-checkpoint-demo-job
+  labels:
+    app: agent-checkpoint-demo
+spec:
+  # Allow up to 10 pod restarts before marking the Job failed.
+  # Each restart resumes from the last checkpoint.
+  backoffLimit: 10
+
+  template:
+    metadata:
+      labels:
+        app: agent-checkpoint-demo
+    spec:
+      restartPolicy: OnFailure
+
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: agent
+          image: agent-checkpoint-demo:latest
+          imagePullPolicy: Never
+
+          command: ["python", "examples/demo_agent.py"]
+
+          envFrom:
+            - configMapRef:
+                name: agent-checkpoint-config
+
+          volumeMounts:
+            - name: checkpoint-storage
+              mountPath: /data/checkpoints
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+
+      volumes:
+        - name: checkpoint-storage
+          persistentVolumeClaim:
+            claimName: checkpoint-storage

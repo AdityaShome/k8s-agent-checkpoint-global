@@ -1,0 +1,13 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "agent-checkpoint.fullname" . }}-pdb
+  labels:
+    {{- include "agent-checkpoint.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "agent-checkpoint.selectorLabels" . | nindent 6 }}
+{{- end }}
