@@ -358,8 +358,8 @@ Measured on a laptop with SQLite WAL mode, ~1 KB JSON payload, 1000 iterations:
 
 | Operation | mean | p50 | p95 | p99 | max |
 |---|---|---|---|---|---|
-| write (`mark_done`) | 0.11 ms | 0.06 ms | 0.10 ms | 0.15 ms | 12.64 ms |
-| read (`get_result`) | 0.01 ms | 0.01 ms | 0.01 ms | 0.01 ms | 0.06 ms |
+| write (`mark_done`) | 0.15 ms | 0.07 ms | 0.15 ms | 0.21 ms | 27.46 ms |
+| read (`get_result`) | 0.01 ms | 0.01 ms | 0.01 ms | 0.02 ms |  0.06 ms |
 
 SQLite file size: ~1.2 MB per 1000 checkpoints at ~1 KB each.
 
